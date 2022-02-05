@@ -55,7 +55,7 @@ public class TeleOpProgram1 extends OpMode
     //Loop after init
     public void loop()
     {
-        joystickStrafe();//Joystick movement logic
+        joystickStrafe(-gamepad1.left_stick_y, gamepad1.left_stick_x, gamepad1.right_stick_x);//Joystick movement logic
         controlLoop();//Button detection
         moveLift();//Move lift if needed
     }
@@ -79,20 +79,20 @@ public class TeleOpProgram1 extends OpMode
 
         //Lift tilt
         if(gamepad1.y)
-            lift_tilt.setPosition(1);
+            lift_tilt.setPosition(0.9);
 
         else if(gamepad1.a)
             lift_tilt.setPosition(0);
 
         //Lift
         if(gamepad1.dpad_up)
-            liftAmount = -950;//-850;//Top
+            liftAmount = -900;//Top
 
         else if(gamepad1.dpad_left)
-            liftAmount = -800;//Middle
+            liftAmount = -700;//Middle
 
         else if(gamepad1.dpad_right)
-            liftAmount = -600;//Bottom
+            liftAmount = -400;//Bottom
 
         else if(gamepad1.dpad_down)
             liftAmount = 0;//Reset
@@ -135,7 +135,33 @@ public class TeleOpProgram1 extends OpMode
         telemetry.update();
     }
 
-    private void joystickStrafe()
+    private void joystickStrafe(double y1, double x1, double x2)
+    {
+        double turn = x2 * 0.5;
+
+        //Convert cartesian coordinates to polar coordinates
+        double headingPower = Math.hypot(x1, -y1);
+        double headingAngle = Math.atan2(x1, -y1)  + Math.PI / 4;
+
+        //2 Speeds controlled by the bumpers 0.4 - 0.6
+        if(gamepad1.right_bumper)
+            speedMult = 0.6;
+
+        else if(gamepad1.left_bumper)
+            speedMult = 0.4;
+
+        double leftFrontPower = (headingPower * Math.cos(headingAngle) - turn);
+        double rightFrontPower = (headingPower * Math.sin(headingAngle) + turn);
+        double leftBackPower = (headingPower * Math.sin(headingAngle) - turn);
+        double rightBackPower = (headingPower * Math.cos(headingAngle) + turn);
+
+        frontLeft.setPower(leftFrontPower * speedMult);
+        frontRight.setPower(rightFrontPower * speedMult);
+        backLeft.setPower(leftBackPower * speedMult);
+        backRight.setPower(rightBackPower * speedMult);
+    }
+
+    /*private void joystickStrafe()
     {
         //2 Speeds controlled by the bumpers 0.4 - 0.6
         if(gamepad1.right_bumper)
@@ -163,5 +189,5 @@ public class TeleOpProgram1 extends OpMode
         backLeft.setPower(backLeftPower * speedMult);
         frontRight.setPower(frontRightPower * speedMult);
         backRight.setPower(backRightPower * speedMult);
-    }
+    }*/
 }

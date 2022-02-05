@@ -99,6 +99,8 @@ public class AutoRedRight extends LinearOpMode
 
         //Wait for start to be pushed
         waitForStart();
+        //Wait 10 seconds to avoid potential collision
+        sleep(10000);
         //Line up for rotation
         directionDrive(5, true);
         //Drive forward out of starting pos
@@ -108,7 +110,7 @@ public class AutoRedRight extends LinearOpMode
         //Drive to shipping hub
         directionDrive(12, false);
         //TODO Move lift to proper position based off barcode - currently middle
-        moveLift(-800);
+        moveLift(-700);
         //Deliver preload
         deliver();
         //Lift goes down
