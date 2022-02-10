@@ -1,11 +1,12 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.Unused;
 
-import com.acmerobotics.dashboard.FtcDashboard;
+/*import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
-import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;*/
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -16,9 +17,9 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
-@Config
+@Disabled
 @Autonomous
-public class AutoRedRight extends LinearOpMode
+public class AutoBlueRight extends LinearOpMode
 {
     private DcMotor frontLeft;
     private DcMotor backLeft;
@@ -78,7 +79,7 @@ public class AutoRedRight extends LinearOpMode
         backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         lift.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());//Initialize Telemetry
+        //telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());//Initialize Telemetry
 
         telemetry.addData("Init","Motor init done!");
 
@@ -99,14 +100,12 @@ public class AutoRedRight extends LinearOpMode
 
         //Wait for start to be pushed
         waitForStart();
-        //Wait 10 seconds to avoid potential collision
-        sleep(10000);
-        //Line up for rotation
-        directionDrive(5, true);
+        //Wait 5 seconds to avoid potential collision
+        sleep(5000);
         //Drive forward out of starting pos
-        directionDrive(10, false);
+        directionDrive(12, false);
         //Face the shipping hub
-        rotate(35);
+        rotate(45);
         //Drive to shipping hub
         directionDrive(12, false);
         //TODO Move lift to proper position based off barcode - currently middle
@@ -115,13 +114,21 @@ public class AutoRedRight extends LinearOpMode
         deliver();
         //Lift goes down
         moveLift(0);
-        //Turn around to face warehouse
-        rotate(50);
-        //Strafe to wall
-        directionDrive(30, true);
-        //Park
-        directionDrive(-40, false);
-        //Done! - Parked in white warehouse
+        //Turn around to face carousel
+        rotate(-180);
+        //Drive to carousel
+        directionDrive(12, false);
+        //Rotate to face wall
+        rotate(45);
+        //Drive to hit wall
+        directionDrive(26, false);//Slightly lower than red
+        //Strafe to carousel
+        directionDrive(-7, true);//Slightly higher than red
+        //Spin ducks
+        spinDucks();
+        //Strafe to warehouse
+        directionDrive(22, true);//Slightly higher than red
+        //Done! - Parked in blue warehouse
     }
 
     //Drive for a specific amount in inches
@@ -262,7 +269,7 @@ public class AutoRedRight extends LinearOpMode
 
     private void deliver()
     {
-        lift_tilt.setPosition(1);
+        lift_tilt.setPosition(0.9);
 
         sleep(2000);//Wait for the cube to move
 

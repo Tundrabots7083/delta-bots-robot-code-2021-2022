@@ -6,7 +6,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 
 @TeleOp
-public class TeleOpProgram1 extends OpMode
+public class TeleOpProgram extends OpMode
 {
     private DcMotor frontLeft;
     private DcMotor backLeft;
@@ -84,9 +84,8 @@ public class TeleOpProgram1 extends OpMode
         else if(gamepad1.a)
             lift_tilt.setPosition(0);
 
-        //Lift
         if(gamepad1.dpad_up)
-            liftAmount = -900;//Top
+            liftAmount = -880;//Top
 
         else if(gamepad1.dpad_left)
             liftAmount = -700;//Middle
@@ -160,34 +159,4 @@ public class TeleOpProgram1 extends OpMode
         backLeft.setPower(leftBackPower * speedMult);
         backRight.setPower(rightBackPower * speedMult);
     }
-
-    /*private void joystickStrafe()
-    {
-        //2 Speeds controlled by the bumpers 0.4 - 0.6
-        if(gamepad1.right_bumper)
-            speedMult = 0.6;
-
-        else if(gamepad1.left_bumper)
-            speedMult = 0.4;
-
-        double y = gamepad1.left_stick_y;
-        double x = -gamepad1.left_stick_x * 1.1; // Counteract imperfect strafing
-        double rx = -gamepad1.right_stick_x;
-
-        // Denominator is the largest motor power (absolute value) or 1
-        // This ensures all the powers maintain the same ratio, but only when
-        // at least one is out of the range [-1, 1]
-        double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
-
-        double frontLeftPower = (y + x + rx) / denominator;
-        double backLeftPower = (y - x + rx) / denominator;
-        double frontRightPower = (y - x - rx) / denominator;
-        double backRightPower = (y + x - rx) / denominator;
-
-        //Set the motor powers
-        frontLeft.setPower(frontLeftPower * speedMult);
-        backLeft.setPower(backLeftPower * speedMult);
-        frontRight.setPower(frontRightPower * speedMult);
-        backRight.setPower(backRightPower * speedMult);
-    }*/
 }

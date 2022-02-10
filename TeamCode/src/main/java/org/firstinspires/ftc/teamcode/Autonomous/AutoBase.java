@@ -1,56 +1,69 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.Autonomous;
 
-import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.config.Config;
-import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.robotcore.external.ClassFactory;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
+import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
+import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 
-@Config
-@Autonomous
-public class AutoBlueLeft extends LinearOpMode
+import java.util.List;
+
+public abstract class AutoBase extends LinearOpMode
 {
-    private DcMotor frontLeft;
-    private DcMotor backLeft;
-    private DcMotor frontRight;
-    private DcMotor backRight;
-    private DcMotor leftDuck;
-    private DcMotor rightDuck;
-    private DcMotor lift;
+    protected DcMotor frontLeft;
+    protected DcMotor backLeft;
+    protected DcMotor frontRight;
+    protected DcMotor backRight;
+    protected DcMotor leftDuck;
+    protected DcMotor rightDuck;
+    protected DcMotor lift;
 
-    private Servo lift_tilt;
+    protected Servo lift_tilt;
 
-    private BNO055IMU imu;
+    protected BNO055IMU imu;
 
-    public static double driveSpeed = 0.25;
-    public static double rotSpeed = 0.4;
+    protected static final double driveSpeed = 0.25;
+    protected static final double rotSpeed = 0.4;
 
-    public static double distanceDrivekP = 0.0015;//Distance drive distance proportion
+    protected static final double distanceDrivekP = 0.0015;//Distance drive distance proportion
 
-    public static double angleDrivekP = 0.01;//Distance drive angle proportion
+    protected static final double angleDrivekP = 0.01;//Distance drive angle proportion
 
-    public static double rotkP = 0.015;//Rotational proportion
+    protected static final double rotkP = 0.015;//Rotational proportion
 
-    public static double diameter = 3.77953;//Wheel Diameter - Inches
-    public static double resolution = 384.5;//Tics per Revolution
-    public static double tpi = resolution / (Math.PI * diameter);//Tics per Inches
+    protected static final double diameter = 3.77953;//Wheel Diameter - Inches
+    protected static final double resolution = 384.5;//Tics per Revolution
+    protected static final double tpi = resolution / (Math.PI * diameter);//Tics per Inches
 
-    public static double liftDrivekP = 0.05;;//Lift proportion constant
+    protected static final double liftDrivekP = 0.05;;//Lift proportion constant
 
-    @Override
-    //Run at start
-    //TODO: !WARNING - CHECK BATTERY VOLTAGE!
-    public void runOpMode() throws InterruptedException
+    private static final String TFOD_MODEL_ASSET = "FreightFrenzy_BCDM.tflite";
+    private static final String[] LABELS =
+            {
+                    "Ball",
+                    "Cube",
+                    "Duck",
+                    "Marker"
+            };
+
+    private static final String VUFORIA_KEY = "AeNq4qv/////AAABmZ4Kt98fREmenOsFuziFTBCDbw4UHuQ5SHg50r2Rj9m2m56FbLpOHL+B8haVsGdd/IDa7goCSOn7ai5FyOspgj241Jz+wBkD5lFinnNnCz1gZfaz42a0kjRJ1khyQqOoMiiSaG+dXh6OTt5CXwxEM0YYrR/Ogr7YdfLG7L7Y3nJo4FqVzSRvW8Xw4xsGt9PvxJNrUmvbTWAKbgBo7RvmGrUPftmF6TE5rvZTXt/IVHgfYZEvB4cO1O8YWBCZAJSLVW7TzM3hqAWvKrxCnTauL2UKOA45mDVAQT4ahsaDjJiNHjgWc4kAoYjRyVuSg+POigZBDhQ1vSMf8bazAHpfoH0LGg/z53T0oap3BOBM8Tdb";
+
+    private VuforiaLocalizer vuforia;
+
+    private TFObjectDetector tfod;
+
+    protected void initHardware()
     {
         frontLeft = hardwareMap.get(DcMotor.class, "front_left");
         backLeft = hardwareMap.get(DcMotor.class, "back_left");
@@ -78,8 +91,6 @@ public class AutoBlueLeft extends LinearOpMode
         backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         lift.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());//Initialize Telemetry
-
         telemetry.addData("Init","Motor init done!");
 
         //Initialize parameters for imu
@@ -96,36 +107,11 @@ public class AutoBlueLeft extends LinearOpMode
         telemetry.addData("Init","Imu init done!");
 
         telemetry.update();
-
-        //Wait for start to be pushed
-        waitForStart();
-        //Wait 10 seconds to avoid potential collision
-        sleep(10000);
-        //Line up for rotation
-        directionDrive(-5, true);
-        //Drive forward out of starting pos
-        directionDrive(10, false);
-        //Face the shipping hub
-        rotate(-35);
-        //Drive to shipping hub
-        directionDrive(13, false);//Different than red
-        //TODO Move lift to proper position based off barcode - currently middle
-        moveLift(-700);
-        //Deliver preload
-        deliver();
-        //Lift goes down
-        moveLift(0);
-        //Turn around to face warehouse
-        rotate(-50);
-        //Strafe to wall
-        directionDrive(-29, true);//Different than red
-        //Park
-        directionDrive(-40, false);
-        //Done! - Parked in white warehouse
     }
 
+
     //Drive for a specific amount in inches
-    private void directionDrive(int inches, boolean strafe)
+    protected void directionDrive(int inches, boolean strafe)
     {
         //Reset Encoders
         frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -193,7 +179,7 @@ public class AutoBlueLeft extends LinearOpMode
         backRight.setPower(0);
     }
 
-    private double getAveragePosition(boolean strafe)
+    protected double getAveragePosition(boolean strafe)
     {
         if(strafe)
             return (-frontLeft.getCurrentPosition() + frontRight.getCurrentPosition() + backLeft.getCurrentPosition() - backRight.getCurrentPosition()) / 4D;
@@ -202,7 +188,7 @@ public class AutoBlueLeft extends LinearOpMode
             return (frontLeft.getCurrentPosition() + frontRight.getCurrentPosition() + backLeft.getCurrentPosition() + backRight.getCurrentPosition()) / 4D;
     }
 
-    private void rotate(double degrees)
+    protected void rotate(double degrees)
     {
         double startDeg = getAngleDegrees();
 
@@ -236,7 +222,7 @@ public class AutoBlueLeft extends LinearOpMode
         backRight.setPower(0);
     }
 
-    private void moveLift(int amount)
+    protected void moveLift(int amount)
     {
         double distanceError = amount - lift.getCurrentPosition();
 
@@ -260,16 +246,16 @@ public class AutoBlueLeft extends LinearOpMode
         lift.setPower(0);
     }
 
-    private void deliver()
+    protected void deliver()
     {
-        lift_tilt.setPosition(1);
+        lift_tilt.setPosition(0.9);
 
         sleep(2000);//Wait for the cube to move
 
         lift_tilt.setPosition(0);
     }
 
-    private void spinDucks()
+    protected void spinDucks()
     {
         leftDuck.setPower(0.6);
         rightDuck.setPower(-0.6);
@@ -280,10 +266,112 @@ public class AutoBlueLeft extends LinearOpMode
         rightDuck.setPower(0);
     }
 
-    private double getAngleDegrees()
+    protected double getAngleDegrees()
     {
         Orientation angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
 
         return AngleUnit.DEGREES.fromUnit(angles.angleUnit, angles.firstAngle);
+    }
+
+    private void initVuforia()
+    {
+        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
+
+        parameters.vuforiaLicenseKey = VUFORIA_KEY;
+        parameters.cameraName = hardwareMap.get(WebcamName.class, "Webcam 1");
+
+        vuforia = ClassFactory.getInstance().createVuforia(parameters);
+    }
+
+    private void initTfod()
+    {
+        int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+
+        TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
+        tfodParameters.minResultConfidence = 0.7f;
+        tfodParameters.isModelTensorFlow2 = true;
+        tfodParameters.inputSize = 320;
+
+        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
+        tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABELS);
+    }
+
+    protected void initObjectDetection()
+    {
+        initVuforia();
+        initTfod();
+    }
+
+    protected int getLiftPosFromObject()
+    {//TODO Check these values
+        float objectPos = detectObjects();
+
+        if(objectPos < 500)
+            return -400;//Bottom
+
+        else if(objectPos > 500 && objectPos < 1000)
+            return -700;//Middle
+
+        else if(objectPos > 1000)
+            return -880;//Top
+
+        return -700;//Default to middle
+    }
+
+    private float detectObjects()
+    {
+        if(tfod != null)
+        {
+            tfod.activate();
+
+            tfod.setZoom(1.25, 16.0 / 9.0);
+        }
+
+        int iterations = 0;
+        while(iterations < 50)
+        {
+            if(tfod != null)
+            {
+                //getUpdatedRecognitions() will return null if no new information is available since the last time that call was made.
+                List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
+
+                if(updatedRecognitions != null)
+                {
+                    telemetry.addData("# Objects Detected", updatedRecognitions.size());
+
+                    //Step through the list of recognitions and display boundary info.
+                    int i = 0;
+                    for(Recognition recognition : updatedRecognitions)
+                    {
+                        telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
+                        telemetry.addData(String.format("left, top (%d)", i), "%.03f , %.03f", recognition.getLeft(), recognition.getTop());
+                        telemetry.addData(String.format("right, bottom (%d)", i), "%.03f , %.03f", recognition.getRight(), recognition.getBottom());
+
+                        if(recognition.getLabel().equals("Duck"))
+                        {
+                            tfod.shutdown();
+
+                            telemetry.addData("Object Detection", "Found duck at " + recognition.getRight());
+
+                            telemetry.update();
+
+                            return recognition.getRight();
+                        }
+
+                        i++;
+                    }
+
+                    telemetry.update();
+
+                    iterations++;
+                }
+            }
+        }
+
+        telemetry.addData("Warning", "No objects detected!");
+
+        telemetry.update();
+
+        return -1;
     }
 }
